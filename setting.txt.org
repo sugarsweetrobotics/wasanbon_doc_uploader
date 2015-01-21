@@ -1,0 +1,3 @@
+user: hoge
+passwd: hoo
+url: http://wasanbon.org
