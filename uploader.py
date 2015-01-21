@@ -14,9 +14,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 setting_filename = 'setting.txt'
-#test_name = 'MapperViewer'
+test_name = 'Localization_MRPT'
 #test_name = None
-test_name = "SFMLJoystick"
+#test_name = "SFMLJoystick"
 
 def is_test():
     return test_name != None
@@ -54,8 +54,13 @@ def create_image(rtcprof):
     text_color = (15, 15, 30, 255)
     line_color = (15, 15, 30, 255)
 
-    text_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 14)
-    title_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 20)
+    if sys.platform == 'win32':
+        font_path = "C:\\Windows\\Fonts\\cour.ttf"
+        text_font = ImageFont.truetype(font_path, 14)
+        title_font = ImageFont.truetype(font_path, 20)
+    else:
+        text_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 14)
+        title_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 20)
     im = Image.new('RGBA', (img_width, img_height), (228, 212, 162, 0))
     draw = ImageDraw.Draw(im)
     
@@ -299,14 +304,29 @@ def main():
     sys.stdout.write(' - OK.\n')
 
     prof_path = os.path.join(wasanbon.rtm_temp(), 'rtcprofile')
-    for file in [f[0:-4] for f in os.listdir(prof_path) if f.endswith('.xml')]:
+
+    for d in os.listdir(prof_path):
+        rtcd = os.path.join(prof_path, d)
+        if os.path.isdir(rtcd):
+            for file in [f[0:-4] for f in os.listdir(rtcd) if f.endswith('.xml')]:
+                upload_file(wp, prof_path, file)
+    return
+
+
+def upload_file(wp, prof_path, file):
+    sys.stdout.write(' -- Uploading %s\n' % file)
+    try:
         if is_test():
             if not file == test_name:
-                continue
+                #continue
+                return
         sys.stdout.write(' - Checking RTC.%s\n' % file)
-        xml_file = os.path.join(prof_path, file + '.xml')
-        yaml_file = os.path.join(prof_path, file + '.yaml')
-        img_file = os.path.join(prof_path, file + '.jpg')
+        img_file = os.path.join(prof_path, file, file + '.jpg')
+        yaml_file = os.path.join(prof_path, file, file + '.yaml')
+        for f in os.listdir(os.path.join(prof_path, file)):
+            if f.endswith('.xml'):
+                xml_file = os.path.join(prof_path, file, f)
+
         try:
             rtcprof = rtcprofile.RTCProfile(xml_file)
             info = yaml.load(open(yaml_file, 'r'))
@@ -327,7 +347,9 @@ def main():
 
         except:
             traceback.print_exc()
-        
+    except:
+        traceback.print_exc()
+
     return
 
 
