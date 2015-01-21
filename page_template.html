@@ -1,3 +1,6 @@
+<h2>Name</h2>
+{{ rtc.basicInfo.name }}
+
 <h2>Brief</h2>
 {{ rtc.basicInfo.description }}
 <!--more-->
@@ -16,6 +19,9 @@
 
 <h2>URL</h2>
 <a href="{{ info['url'] }}" target="new">{{ info['url'] }}</a>
+
+<h2>Platform</h2>
+{{ info['platform'] }}
 
 <h2>Data In Ports</h2>
 <table>
@@ -73,7 +79,6 @@
 {% endfor %}
 
 <h2>Configurations</h2>
-
 <table>
   <tr>
     <td>Name</td>
@@ -90,8 +95,6 @@
     <td>{{ conf.doc.description }}</td>
   </tr>{% endfor %}
 </table>
-
-
 
 <h2>How To Build</h2>
 {% if rtc.language.kind == 'C++' %}<pre>
@@ -126,3 +129,13 @@
   $ ./mgr.py rtc run {{ rtc.name }} # To Run RTC
 </pre>
 
+<h2>Profile Status</h2>
+Not available
+
+<h2>Build Status</h2>
+<h3>Build in Windows</h3>
+Not available
+<h3>Build in OSX</h3>
+Not available
+<h3>Build in Linux</h3>
+Not available

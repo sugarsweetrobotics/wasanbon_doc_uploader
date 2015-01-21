@@ -14,9 +14,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 setting_filename = 'setting.txt'
-test_name = 'Localization_MRPT'
-#test_name = None
+#test_name = 'Localization_MRPT'
+test_name = None
 #test_name = "SFMLJoystick"
+#test_name = "TestIn_py"
 
 def is_test():
     return test_name != None
@@ -200,9 +201,9 @@ def upload_image(wp, rtcprof, img_file):
     # }
     return response
 
-def upload_text(wp, rtcprof, html, img_info = None):
+def upload_text(wp, repo_name, rtcprof, html, img_info = None):
     sys.stdout.write(' - Uploading %s\n' % rtcprof.name)
-    title = '[RTC] ' + rtcprof.name
+    title = '[RTC] ' + repo_name #rtcprof.name
     editFlag = False
     post = None
 
@@ -217,7 +218,7 @@ def upload_text(wp, rtcprof, html, img_info = None):
             break
     if not editFlag:
         post = WordPressPost()
-        post.title = '[RTC] ' + rtcprof.name
+        post.title = title
         post.content = html
         post.terms_names = {
             'post_tag': [rtcprof.name, 'RTC'],
@@ -232,7 +233,7 @@ def upload_text(wp, rtcprof, html, img_info = None):
         return 
     else:
         #post = WordPressPost()
-        post.title = '[RTC] ' + rtcprof.name
+        post.title = title
         post.content = html
         post.terms_names = {
             'post_tag': [rtcprof.name, 'RTC'],
@@ -335,6 +336,7 @@ def upload_file(wp, prof_path, file):
             content = '<!--:en-->'+text[0]+'<!--:--><!--:ja-->'+text[0]+'<!--:-->' + \
             '<!--more-->' + '<!--:en-->'+text[1]+'<!--:--><!--:ja-->'+text[1]+'<!--:-->'
 
+            repo_name = file
             if is_content_updated(rtcprof, content) or is_test():
                 im = create_image(rtcprof)
                 if os.path.isfile(img_file):
@@ -343,7 +345,7 @@ def upload_file(wp, prof_path, file):
                 
                 response = upload_image(wp, rtcprof, img_file)
             
-                upload_text(wp, rtcprof, content, response)
+                upload_text(wp, repo_name, rtcprof, content, response)
 
         except:
             traceback.print_exc()
