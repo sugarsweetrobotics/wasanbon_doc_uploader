@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # - coding: utf-8
-import os, sys, time, yaml, datetime, traceback
+import os, sys, time, yaml, datetime, traceback, types
 import wasanbon
 from wasanbon.core.rtc import rtcprofile
 from jinja2 import Environment, FileSystemLoader
@@ -11,14 +11,18 @@ from wordpress_xmlrpc.methods import posts, taxonomies, media
 from wordpress_xmlrpc.compat import xmlrpc_client
 
 from PIL import Image, ImageDraw, ImageFont
-
+rtc_name_tag = '<h2>Name</h2>'
+rtc_brief_tag = '<h2>Brief</h2>'
 
 setting_filename = 'setting.txt'
 #test_name = 'Localization_MRPT'
 test_name = None
 #test_name = "SFMLJoystick"
 #test_name = "TestIn_py"
-
+build_report_filename = 'report_build.yaml'
+build_in_windows_tag = '<h3>Build in Windows</h3>'
+build_in_osx_tag = '<h3>Build in OSX</h3>'
+build_in_linux_tag = '<h3>Build in Linux</h3>'
 def is_test():
     return test_name != None
 
@@ -167,6 +171,8 @@ tpl = env.get_template('page_template.html')
 all_posts = []    
 
 def is_content_updated(rtcprof, content):
+    return True
+"""
     title = '[RTC] ' + rtcprof.name
     editFlag = False
     post = None
@@ -181,7 +187,8 @@ def is_content_updated(rtcprof, content):
     if post.content == content:
         return False
     return True
-        
+"""
+     
 def upload_image(wp, rtcprof, img_file):
     sys.stdout.write(' - Uploading Image %s\n' % rtcprof.name)
     data = {
@@ -215,11 +222,15 @@ def upload_text(wp, repo_name, rtcprof, html, img_info = None):
         if p.title == title:
             editFlag = True
             post = p
+            html = copy_build_status(post.content, html)
+
             break
+
+    html = update_build_status(html)
     if not editFlag:
         post = WordPressPost()
         post.title = title
-        post.content = html
+        post.content = apply_language_setting(html)
         post.terms_names = {
             'post_tag': [rtcprof.name, 'RTC'],
             'category': ['RTComponents']
@@ -231,10 +242,10 @@ def upload_text(wp, repo_name, rtcprof, html, img_info = None):
         post.thumbnail = img_info['id']
         post.id = wp.call(NewPost(post))
         return 
-    else:
+    else: # Edit Flag
         #post = WordPressPost()
         post.title = title
-        post.content = html
+        post.content = apply_language_setting(html)
         post.terms_names = {
             'post_tag': [rtcprof.name, 'RTC'],
             'category': ['RTComponents']
@@ -332,15 +343,15 @@ def upload_file(wp, prof_path, file):
             rtcprof = rtcprofile.RTCProfile(xml_file)
             info = yaml.load(open(yaml_file, 'r'))
             html = tpl.render({'rtc': rtcprof, 'info':info})
-            text = html.split('<!--more-->')
-            content = '<!--:en-->'+text[0]+'<!--:--><!--:ja-->'+text[0]+'<!--:-->' + \
-            '<!--more-->' + '<!--:en-->'+text[1]+'<!--:--><!--:ja-->'+text[1]+'<!--:-->'
+            #content = apply_language_setting(html)
+            content = html
 
             repo_name = file
             if is_content_updated(rtcprof, content) or is_test():
                 im = create_image(rtcprof)
                 if os.path.isfile(img_file):
-                    os.rename(img_file, img_file + wasanbon.timestampstr())
+                    #os.rename(img_file, img_file + wasanbon.timestampstr())
+                    os.remove(img_file)
                 im.save(img_file)
                 
                 response = upload_image(wp, rtcprof, img_file)
@@ -353,6 +364,61 @@ def upload_file(wp, prof_path, file):
         traceback.print_exc()
 
     return
+
+def apply_language_setting(html):
+    text = html.split('<!--more-->')
+    content = '<!--:en-->'+text[0]+'<!--:--><!--:ja-->'+text[0]+'<!--:-->' + \
+        '<!--more-->' + '<!--:en-->'+text[1]+'<!--:--><!--:ja-->'+text[1]+'<!--:-->'
+    return content
+
+def copy_build_status(old_content, new_content):
+    start_index = old_content.find('<h2>Build Status</h2>')
+    temp_content = old_content[start_index:]
+    stop_index = temp_content.find('<h2>Copyright</h2>') 
+    build_status_block = temp_content[:stop_index]
+    
+    start_index = new_content.find('<h2>Build Status</h2>')
+    stop_index = new_content.find('<h2>Copyright</h2>')
+    
+    new_content = new_content[:start_index] + build_status_block + new_content[stop_index:]
+    return new_content
+
+def update_build_status(content):
+
+    start_index = content.find(rtc_name_tag)
+    stop_index = content.find(rtc_brief_tag)
+    rtc_name = content[start_index + len(rtc_name_tag):stop_index].strip()
+    
+    if sys.platform == 'win32':
+        start_index = content.find(build_in_windows_tag)
+        stop_index = content.find(build_in_osx_tag)
+        tag = build_in_windows_tag
+    elif sys.platform == 'darwin':
+        start_index = content.find(build_in_osx_tag)
+        stop_index = content.find(build_in_linux_tag)
+        tag = build_in_osx_tag
+    else:
+        start_index = content.find(build_in_linux_tag)
+        stop_index = content.find('<h2>Copyright</h2>')
+        tag = build_in_linux_tag
+        pass
+
+    print ' -- Checking Build Status of (%s)' % rtc_name
+    status = -1
+    if os.path.isfile(build_report_filename):
+        f = open(build_report_filename, 'r')
+        d = yaml.load(f)
+        if type(d) == types.DictType:
+            if rtc_name in d.keys():
+                status = d[rtc_name]['status']
+                print ' -- RTC %s is build (%d)' % (rtc_name, status)
+                if status == 0:
+                    status_str = 'Success (' + d[rtc_name]['date'] + ')' 
+                else:
+                    status_str = 'Failed (' + d[rtc_name]['date'] + ')'
+                content = content[0:start_index] + tag + '\n' + status_str + '\n' + content[stop_index:]
+    
+    return content
 
 
 
