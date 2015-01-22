@@ -237,7 +237,12 @@ def upload_text(wp, repo_name, rtcprof, html, img_info = None):
             }
         post.slug = rtcprof.name
         n = datetime.datetime.now()
-        post.date = datetime.datetime(n.year, n.month, n.day, n.hour-9, n.minute, n.second)
+        day = n.day
+        hour = n.hour
+        if n.hour < 9:
+            day = day -1
+            hour = hour + 24 
+        post.date = datetime.datetime(n.year, n.month, day, hour-9, n.minute, n.second)
         post.post_status = 'publish'
         post.thumbnail = img_info['id']
         post.id = wp.call(NewPost(post))
@@ -252,7 +257,12 @@ def upload_text(wp, repo_name, rtcprof, html, img_info = None):
             }
         post.slug = rtcprof.name
         n = datetime.datetime.now()
-        post.date = datetime.datetime(n.year, n.month, n.day, n.hour-9, n.minute, n.second)
+        day = n.day
+        hour = n.hour
+        if n.hour < 9:
+            day = day -1
+            hour = hour + 24 
+        post.date = datetime.datetime(n.year, n.month, day, hour-9, n.minute, n.second)
         post.post_status = 'publish'
         post.thumbnail = img_info['id']
         wp.call(posts.EditPost(post.id, post))
