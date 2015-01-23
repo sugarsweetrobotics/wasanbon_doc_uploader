@@ -13,21 +13,25 @@ def check_output(cmd):
     print 'CMD:', cmd
     #if cmd[0].endswith('.py'):
     #    cmd = ['python'] + cmd
+    shell = False
     if sys.platform == 'win32' and cmd[0].startswith('./'):
         cmd[0] = cmd[0][2:]
-
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        shell = True
+        
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=shell)
     p.wait()
     output = p.stdout.read()
     return output
 
 def call(cmd):
     print 'CMD:', cmd
+    shell = False
     if sys.platform == 'win32' and cmd[0].startswith('./'):
         cmd[0] = cmd[0][2:]
+        shell = True
     #if cmd[0].endswith('.py'):
     #    cmd = ['python'] + cmd
-    p = subprocess.call(cmd, shell=True)
+    p = subprocess.call(cmd, shell=shell)
     return p
 
 def main():

@@ -63,9 +63,15 @@ def create_image(rtcprof):
         font_path = "C:\\Windows\\Fonts\\cour.ttf"
         text_font = ImageFont.truetype(font_path, 14)
         title_font = ImageFont.truetype(font_path, 20)
-    else:
+    elif sys.platform == 'darwin':
+
         text_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 14)
         title_font = ImageFont.truetype("/Library/Fonts/Courier New.ttf", 20)
+    else:
+        font_path = '/usr/share/fonts/truetype/msttcorefonts/couri.ttf'
+        text_font = ImageFont.truetype(font_path, 14)
+        title_font = ImageFont.truetype(font_path, 20)
+
     im = Image.new('RGBA', (img_width, img_height), (228, 212, 162, 0))
     draw = ImageDraw.Draw(im)
     
